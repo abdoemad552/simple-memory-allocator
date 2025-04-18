@@ -1,3 +1,4 @@
+
 import java.util.*;
 
 public class Memory {
@@ -5,15 +6,12 @@ public class Memory {
     private final int size;
     
     private final ArrayList<MemoryBlock> freeList;
-    private final ArrayList<MemoryBlock> busyList;
-    
-    private final Map<String, Integer> allocationIndex;
+    private final ArrayList<AllocatedBlock> busyList;
     
     public Memory(int size) {
         this.size = size;
         this.freeList = new ArrayList<>();
         this.busyList = new ArrayList<>();
-        this.allocationIndex = new HashMap<>();
         
         freeList.add(new MemoryBlock(size, 0));
     }
@@ -34,72 +32,80 @@ public class Memory {
             ));
         }
         
-        MemoryBlock block = freeList.remove(blockIndex);
-        block.setSize(size);
         
-        int index = -1;
+        AllocatedBlock allocatedBlock =
+            new AllocatedBlock(name, freeList.remove(blockIndex));
+        allocatedBlock.setSize(size);
+        
         if (busyList.isEmpty()) {
-            busyList.add(block);
-            index = 0;
+            busyList.add(allocatedBlock);
         } else {
+            blockIndex = -1;
             for (int i = 0; i < busyList.size(); i++) {
-                if (busyList.get(i).getStartAddress() > block.getStartAddress()) {
-                    index = i;
-                    busyList.add(index, block);
+                if (busyList.get(i).getStartAddress() > allocatedBlock.getStartAddress()) {
+                    blockIndex = i;
+                    busyList.add(blockIndex, allocatedBlock);
                     break;
                 }
             }
             
-            if (index == -1) {
-                index = busyList.size();
-                busyList.add(block);
+            if (blockIndex == -1) {
+                busyList.add(allocatedBlock);
             }
         }
-        
-        allocationIndex.put(name, index);
     }
     
     public void release(String name) {
-        if (allocationIndex.containsKey(name)) {
-            int blockIndex = allocationIndex.get(name);
-            
-            MemoryBlock block = busyList.remove(blockIndex);
-            System.out.printf("%s\n", block);
+        int blockIndex = findByName(name);
+        
+        if (blockIndex != -1) {
+            AllocatedBlock allocatedBlock = busyList.remove(blockIndex);
+            System.out.printf("%s\n", allocatedBlock);
             
             if (freeList.isEmpty()) {
-                freeList.add(block);
+                freeList.add(allocatedBlock.getBlock());
             } else {
                 blockIndex = -1;
                 for (int i = 0; i < freeList.size(); i++) {
-                    if (freeList.get(i).getStartAddress() > block.getStartAddress()) {
+                    if (freeList.get(i).getStartAddress() > allocatedBlock.getStartAddress()) {
                         blockIndex = i;
-                        freeList.add(blockIndex, block);
+                        freeList.add(blockIndex, allocatedBlock.getBlock());
                         break;
                     }
                 }
                 
                 if (blockIndex == -1) {
                     blockIndex = freeList.size();
-                    freeList.add(block);
+                    freeList.add(allocatedBlock.getBlock());
                 }
                 
+                allocatedBlock.setBlock(null);
+                
                 if (blockIndex > 0) {
-                    if (freeList.get(blockIndex - 1).getEndAddress() == block.getStartAddress()) {
-                        MemoryBlock prev = freeList.remove(blockIndex - 1);
-                        block.setStartAddress(prev.getStartAddress());
-                        block.setSize(prev.getSize() + block.getSize());
-                        blockIndex--;
+                    if (freeList.get(blockIndex - 1).getEndAddress() == freeList.get(blockIndex).getStartAddress()) {
+                        MemoryBlock prev = freeList.remove(--blockIndex);
+                        freeList.get(blockIndex).setStartAddress(prev.getStartAddress());
+                        freeList.get(blockIndex).setSize(prev.getSize() + freeList.get(blockIndex).getSize());
                     }
                 }
                 
                 if (blockIndex < freeList.size() - 1) {
-                    if (freeList.get(blockIndex + 1).getStartAddress() == block.getEndAddress()) {
+                    if (freeList.get(blockIndex).getEndAddress() == freeList.get(blockIndex + 1).getStartAddress()) {
                         MemoryBlock next = freeList.remove(blockIndex + 1);
-                        block.setSize(next.getSize() + block.getSize());
+                        freeList.get(blockIndex).setSize(next.getSize() + freeList.get(blockIndex).getSize());
                     }
                 }
             }
         }
+    }
+    
+    private int findByName(String name) {
+        for (int i = 0; i < busyList.size(); i++) {
+            if (busyList.get(i).getName().equals(name)) {
+                return i;
+            }
+        }
+        return -1;
     }
     
     public int findBlock(int size, char strategy) {
@@ -177,24 +183,24 @@ public class Memory {
             }
         }
         
-        System.out.printf("+----------------------------------------------------------+\n");
-        System.out.printf("|                        Busy List                         |\n");
-        System.out.printf("+---------------+---------------+------------+-------------+\n");
-        System.out.printf("| Process Index | Start Address | Block Size | End Address |\n");
-        System.out.printf("+---------------+---------------+------------+-------------+\n");
+        System.out.printf("+---------------------------------------------------------+\n");
+        System.out.printf("|                       Busy List                         |\n");
+        System.out.printf("+--------------+---------------+------------+-------------+\n");
+        System.out.printf("| Process Name | Start Address | Block Size | End Address |\n");
+        System.out.printf("+--------------+---------------+------------+-------------+\n");
         if (busyList.isEmpty()) {
-            System.out.printf("|                         Empty                            |\n");
-            System.out.printf("+----------------------------------------------------------+\n");
+            System.out.printf("|                        Empty                            |\n");
+            System.out.printf("+---------------------------------------------------------+\n");
         } else {
-            for (int i = 0; i < busyList.size(); i++) {
+            for (AllocatedBlock allocatedBlock : busyList) {
                 System.out.printf(
-                    "| %13d | %13d | %10d | %11d |\n",
-                    i,
-                    busyList.get(i).getStartAddress(),
-                    busyList.get(i).getSize(),
-                    busyList.get(i).getEndAddress()
+                    "| %-12s | %13d | %10d | %11d |\n",
+                    allocatedBlock.getName(),
+                    allocatedBlock.getStartAddress(),
+                    allocatedBlock.getSize(),
+                    allocatedBlock.getEndAddress()
                 );
-                System.out.printf("+---------------+---------------+------------+-------------+\n");
+                System.out.printf("+--------------+---------------+------------+-------------+\n");
             }
         }
     }

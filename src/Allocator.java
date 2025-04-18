@@ -8,8 +8,8 @@ public class Allocator {
     }
     
     public static void main(String[] args) {
-        if (args.length < 1) {
-            System.out.printf("Error: java Allocator <size>\n");
+		if (args.length < 1) {
+            System.out.printf("Error: ./allocator <size>\n");
             System.exit(1);
         }
 
@@ -29,7 +29,9 @@ public class Allocator {
         
         Memory memory = new Memory((int) size);
         
-        while (true) {
+		System.out.printf("Memory allocator is ready ;)\n");
+
+		while (true) {
             System.out.printf("allocator> ");
             
             String command = input.nextLine().trim();
@@ -95,7 +97,8 @@ public class Allocator {
                     memory.status();
                     break;
                 } case "exit": case "q": {
-                    System.exit(0);
+					System.out.printf("Bye\n");
+					System.exit(0);
                 } default: {
                     System.out.printf("Invalid command\n");
                     showAvailableCommands();

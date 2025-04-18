@@ -3,8 +3,11 @@
 SRC_DIR="src"
 TARGET_DIR="target"
 ENTRY_CLASS="Allocator"
+PROGRAM_NAME="allocator"
 
-rm -rf $TARGET_DIR/*
+rm -f "$PROGRAM_NAME.jar"
+
+mkdir $TARGET_DIR
 
 echo "Compiling Java files..."
 COMPILE_OUTPUT=$(javac -d $TARGET_DIR $(find $SRC_DIR -name *.java) 2>&1)
@@ -15,7 +18,9 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
-jar cfm allocator.jar manifest.txt -C target/ .
+jar cfm "$PROGRAM_NAME.jar" manifest.txt -C target/ .
 
-echo "Compiled successfully..."
+rm -rf $TARGET_DIR
+
+echo "Compiled successfully."
 

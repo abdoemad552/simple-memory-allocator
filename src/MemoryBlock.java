@@ -1,3 +1,4 @@
+
 public class MemoryBlock {
     
     private int size;
