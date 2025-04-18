@@ -1,4 +1,6 @@
 #!/bin/bash
 
-java -jar allocator.jar $1
+source ./config
+
+java -jar "$DIST_DIR/$JAR_NAME.jar" $1
 

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+SRC_DIR="src"
+OUT_DIR="out"
+DIST_DIR="dist"
+JAR_NAME="allocator"
+ENTRY_CLASS="Allocator"
+
