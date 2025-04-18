@@ -1,26 +1,26 @@
 #!/bin/bash
 
 SRC_DIR="src"
-TARGET_DIR="target"
+OUT_DIR="out"
+DIST_DIR="dist"
 ENTRY_CLASS="Allocator"
-PROGRAM_NAME="allocator"
+JAR_NAME="allocator"
 
-rm -f "$PROGRAM_NAME.jar"
+rm -rf $OUT_DIR
+rm -rf $DIST_DIR
 
-mkdir $TARGET_DIR
+mkdir $OUT_DIR
+mkdir $DIST_DIR
 
 echo "Compiling Java files..."
-COMPILE_OUTPUT=$(javac -d $TARGET_DIR $(find $SRC_DIR -name *.java) 2>&1)
+javac -d $OUT_DIR $(find $SRC_DIR -name *.java)
 
 if [ $? -ne 0 ]; then
 	echo "Compilation failed."
-	echo $COMPILE_OUTPUT
 	exit 1
 fi
 
-jar cfm "$PROGRAM_NAME.jar" manifest.txt -C target/ .
-
-rm -rf $TARGET_DIR
+jar cfm "$DIST_DIR/$JAR_NAME.jar" manifest.txt -C "$OUT_DIR/" .
 
 echo "Compiled successfully."
 
